@@ -4,7 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "InputActionValue.h"
 #include "Octane.generated.h"
+
+class UInputMappingContext;
+class UInputAction;
 
 UCLASS()
 class RLREMAKE_API AOctane : public APawn
@@ -18,6 +22,14 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputMappingContext* InputMappingContext;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* ThrottleAction;
+
+	void Throttle(const FInputActionValue& Value);
 
 public:	
 	// Called every frame

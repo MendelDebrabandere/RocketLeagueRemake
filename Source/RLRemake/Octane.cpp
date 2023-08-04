@@ -2,6 +2,8 @@
 
 
 #include "Octane.h"
+#include "EnhancedInputSubsystems.h"
+#include "EnhancedInputComponent.h"
 
 // Sets default values
 AOctane::AOctane()
@@ -15,7 +17,24 @@ AOctane::AOctane()
 void AOctane::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(InputMappingContext, 0);
+		}
+	}
+}
+
+void AOctane::Throttle(const FInputActionValue& Value)
+{
+	const float CurrentValue = Value.Get<float>();
+
+	if (CurrentValue)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("IA_Throttle triggered"));
+	}
 }
 
 // Called every frame
@@ -29,6 +48,11 @@ void AOctane::Tick(float DeltaTime)
 void AOctane::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		EnhancedInputComponent->BindAction(ThrottleAction, ETriggerEvent::Triggered, this, &AOctane::Throttle);
+	}
 
 }
 
