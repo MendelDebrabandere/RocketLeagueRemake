@@ -4,6 +4,9 @@
 #include "Octane.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Camera/CameraComponent.h"
+#include "Components/StaticMeshComponent.h"
 
 // Sets default values
 AOctane::AOctane()
@@ -11,6 +14,22 @@ AOctane::AOctane()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Set the root as the root component of the pawn
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = Root;
+
+	// Create the mesh component
+	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+	MeshComponent->SetSimulatePhysics(true);
+	MeshComponent->SetupAttachment(Root);
+
+	// Create the spring arm component
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+	SpringArm->SetupAttachment(MeshComponent);
+
+	// Create the camera component and attach it to the spring arm
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	Camera->SetupAttachment(SpringArm);
 }
 
 // Called when the game starts or when spawned
@@ -29,11 +48,15 @@ void AOctane::BeginPlay()
 
 void AOctane::Throttle(const FInputActionValue& Value)
 {
-	const float CurrentValue = Value.Get<float>();
+	const float ThrottleValue = Value.Get<float>();
 
-	if (CurrentValue)
+	if (ThrottleValue)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("IA_Throttle triggered"));
+		// Calculate forward movement based on input
+		FVector ForwardForce = MeshComponent->GetForwardVector() * ThrottleValue * MaxAcceleration;
+
+		// Apply the forward force to the car's physics body
+		MeshComponent->AddForce(ForwardForce);
 	}
 }
 

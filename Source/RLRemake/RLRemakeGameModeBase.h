@@ -13,5 +13,4 @@ UCLASS()
 class RLREMAKE_API ARLRemakeGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
-	
 };

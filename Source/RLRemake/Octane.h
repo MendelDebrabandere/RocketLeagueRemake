@@ -9,6 +9,8 @@
 
 class UInputMappingContext;
 class UInputAction;
+class USpringArmComponent;
+class UCameraComponent;
 
 UCLASS()
 class RLREMAKE_API AOctane : public APawn
@@ -18,6 +20,13 @@ class RLREMAKE_API AOctane : public APawn
 public:
 	// Sets default values for this pawn's properties
 	AOctane();
+
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -29,13 +38,21 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* ThrottleAction;
 
+private:
 	void Throttle(const FInputActionValue& Value);
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	UPROPERTY(EditAnywhere, Category = Root)
+	USceneComponent* Root;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	UPROPERTY(EditAnywhere, Category = Mesh)
+	UStaticMeshComponent* MeshComponent;
 
+	UPROPERTY(EditAnywhere, Category = Camera)
+	USpringArmComponent* SpringArm;
+
+	UPROPERTY(EditAnywhere, Category = Camera)
+	UCameraComponent* Camera;
+
+	UPROPERTY(EditAnywhere, Category = CarSettings)
+	float MaxAcceleration{};
 };
