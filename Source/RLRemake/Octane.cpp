@@ -19,13 +19,13 @@ AOctane::AOctane()
 	RootComponent = Root;
 
 	// Create the mesh component
-	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
-	MeshComponent->SetSimulatePhysics(true);
-	MeshComponent->SetupAttachment(Root);
+	OctaneMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+	OctaneMesh->SetSimulatePhysics(true);
+	OctaneMesh->SetupAttachment(Root);
 
 	// Create the spring arm component
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
-	SpringArm->SetupAttachment(MeshComponent);
+	SpringArm->SetupAttachment(OctaneMesh);
 
 	// Create the camera component and attach it to the spring arm
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
@@ -53,11 +53,24 @@ void AOctane::Throttle(const FInputActionValue& Value)
 	if (ThrottleValue)
 	{
 		// Calculate forward movement based on input
-		FVector ForwardForce = MeshComponent->GetForwardVector() * ThrottleValue * MaxAcceleration;
+		FVector ForwardForce = OctaneMesh->GetForwardVector() * ThrottleValue * MaxAcceleration;
 
 		// Apply the forward force to the car's physics body
-		MeshComponent->AddForce(ForwardForce);
+		OctaneMesh->AddForce(ForwardForce);
 	}
+}
+
+void AOctane::Steer(const FInputActionValue& Value)
+{
+	// Get the current relative rotation of the OctaneMesh
+	FRotator CurrentRelativeRotation = OctaneMesh->GetRelativeRotation();
+
+	// Add the rotation value of 10 degrees around the Z-axis
+	FRotator IncrementalRotation(0.f, Value.Get<FVector2D>().X, 0.f);
+	FRotator NewRelativeRotation = CurrentRelativeRotation + IncrementalRotation;
+
+	// Set the new relative rotation for the OctaneMesh
+	OctaneMesh->SetRelativeRotation(NewRelativeRotation);
 }
 
 // Called every frame
@@ -75,6 +88,7 @@ void AOctane::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(ThrottleAction, ETriggerEvent::Triggered, this, &AOctane::Throttle);
+		EnhancedInputComponent->BindAction(SteerAction, ETriggerEvent::Triggered, this, &AOctane::Steer);
 	}
 
 }

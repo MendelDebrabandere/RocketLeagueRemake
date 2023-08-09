@@ -38,14 +38,18 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* ThrottleAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* SteerAction;
+
 private:
 	void Throttle(const FInputActionValue& Value);
+	void Steer(const FInputActionValue& Value);
 
 	UPROPERTY(EditAnywhere, Category = Root)
 	USceneComponent* Root;
 
 	UPROPERTY(EditAnywhere, Category = Mesh)
-	UStaticMeshComponent* MeshComponent;
+	UStaticMeshComponent* OctaneMesh;
 
 	UPROPERTY(EditAnywhere, Category = Camera)
 	USpringArmComponent* SpringArm;
@@ -55,4 +59,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = CarSettings)
 	float MaxAcceleration{};
+
+	UPROPERTY(EditAnywhere, Category = CarSettings)
+	float TurnSpeed{};
 };
