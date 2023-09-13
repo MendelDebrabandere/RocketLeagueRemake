@@ -58,8 +58,16 @@ private:
 	UCameraComponent* Camera;
 
 	UPROPERTY(EditAnywhere, Category = CarSettings)
-	float MaxAcceleration{};
+	float MaxThrottleSpeed{};
 
 	UPROPERTY(EditAnywhere, Category = CarSettings)
-	float TurnSpeed{};
+	float ThrottleAcceleration{};
+
+	UPROPERTY(EditAnywhere, Category = CarSettings)
+	float TurnAngle{};
+
+	float CurrentTurnAngle{};
+
+	float ThrottleValue{};
+	bool bIsGrounded{};
 };

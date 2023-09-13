@@ -48,29 +48,12 @@ void AOctane::BeginPlay()
 
 void AOctane::Throttle(const FInputActionValue& Value)
 {
-	const float ThrottleValue = Value.Get<float>();
-
-	if (ThrottleValue)
-	{
-		// Calculate forward movement based on input
-		FVector ForwardForce = OctaneMesh->GetForwardVector() * ThrottleValue * MaxAcceleration;
-
-		// Apply the forward force to the car's physics body
-		OctaneMesh->AddForce(ForwardForce);
-	}
+	ThrottleValue = Value.Get<float>();
 }
 
 void AOctane::Steer(const FInputActionValue& Value)
 {
-	// Get the current relative rotation of the OctaneMesh
-	FRotator CurrentRelativeRotation = OctaneMesh->GetRelativeRotation();
-
-	// Add the rotation value of 10 degrees around the Z-axis
-	FRotator IncrementalRotation(0.f, Value.Get<FVector2D>().X, 0.f);
-	FRotator NewRelativeRotation = CurrentRelativeRotation + IncrementalRotation;
-
-	// Set the new relative rotation for the OctaneMesh
-	OctaneMesh->SetRelativeRotation(NewRelativeRotation);
+	CurrentTurnAngle = Value.Get<FVector2D>().X * TurnAngle;
 }
 
 // Called every frame
@@ -78,6 +61,46 @@ void AOctane::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//if throttling
+	if (ThrottleValue > 0.1f)
+	{
+		//if steering, rotate first before moving
+		if (CurrentTurnAngle)
+		{
+			// Get the current relative rotation of the OctaneMesh
+			FRotator CurrentRelativeRotation = OctaneMesh->GetRelativeRotation();
+
+			// Add the rotation value of 10 degrees around the Z-axis
+			FRotator IncrementalRotation(0.f, CurrentTurnAngle * DeltaTime , 0.f);
+			FRotator NewRelativeRotation = CurrentRelativeRotation + IncrementalRotation;
+
+			// Set the new relative rotation for the OctaneMesh
+			OctaneMesh->SetRelativeRotation(NewRelativeRotation);
+		}
+
+		UE_LOG(LogTemp, Warning, TEXT("The linear velocity is: %f"), OctaneMesh->GetPhysicsLinearVelocity().Length())
+
+		// Calculate forward movement based on input
+		FVector ForwardForce = OctaneMesh->GetForwardVector() * ThrottleValue * ThrottleAcceleration;
+
+		// Apply the forward force to the car's physics body
+		OctaneMesh->AddForce(ForwardForce);
+
+		// If the car is too fast, cap the speed from throttling
+		FVector velocity = OctaneMesh->GetPhysicsLinearVelocity();
+		float speed = velocity.Length();
+		if (speed > MaxThrottleSpeed)
+		{
+			OctaneMesh->SetPhysicsLinearVelocity(velocity / speed * MaxThrottleSpeed);
+		}
+
+
+	}
+
+
+	// reset values for input
+	ThrottleValue = 0.f;
+	CurrentTurnAngle = 0.f;
 }
 
 // Called to bind functionality to input
