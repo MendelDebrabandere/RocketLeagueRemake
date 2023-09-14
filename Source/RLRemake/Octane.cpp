@@ -52,6 +52,16 @@ void AOctane::Steer(const FInputActionValue& Value)
 	CurrentTurnAngle = Value.Get<FVector2D>().X * TurnAngle;
 }
 
+void AOctane::Jump(const FInputActionValue& Value)
+{
+	if (bIsGrounded)
+	{
+		FVector JumpForceVector = OctaneMesh->GetUpVector() * JumpForce;
+		OctaneMesh->AddForce(JumpForceVector);
+	}
+}
+
+//only call this function once per frame and just save the value of it in bIsGrounded
 bool AOctane::IsGrounded()
 {
 	FVector StartLocation = GetActorLocation();
@@ -85,9 +95,9 @@ void AOctane::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	const bool grounded = IsGrounded();
+	bIsGrounded = IsGrounded();
 
-	//if (grounded)
+	if (bIsGrounded) // the car is on the ground
 	{
 		//if throttling
 		if (ThrottleValue > 0.1f)
@@ -108,8 +118,8 @@ void AOctane::Tick(float DeltaTime)
 
 			UE_LOG(LogTemp, Warning, TEXT("The linear velocity is: %f"), OctaneMesh->GetPhysicsLinearVelocity().Length())
 
-				// Calculate forward movement based on input
-				FVector ForwardForce = OctaneMesh->GetForwardVector() * ThrottleValue * ThrottleAcceleration;
+			// Calculate forward movement based on input
+			FVector ForwardForce = OctaneMesh->GetForwardVector() * ThrottleValue * ThrottleAcceleration;
 
 			// Apply the forward force to the car's physics body
 			OctaneMesh->AddForce(ForwardForce);
@@ -121,6 +131,22 @@ void AOctane::Tick(float DeltaTime)
 			{
 				OctaneMesh->SetPhysicsLinearVelocity(velocity / speed * MaxThrottleSpeed);
 			}
+		}
+	}
+	else // The car is in the air
+	{
+		//if steering, rotate first before moving
+		if (CurrentTurnAngle)
+		{
+			// Get the current relative rotation of the OctaneMesh
+			FRotator CurrentRelativeRotation = OctaneMesh->GetRelativeRotation();
+
+			// Add the rotation value of 10 degrees around the Z-axis
+			FRotator IncrementalRotation(0.f, CurrentTurnAngle * DeltaTime, 0.f);
+			FRotator NewRelativeRotation = CurrentRelativeRotation + IncrementalRotation;
+
+			// Set the new relative rotation for the OctaneMesh
+			OctaneMesh->SetRelativeRotation(NewRelativeRotation);
 		}
 	}
 
@@ -139,6 +165,7 @@ void AOctane::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	{
 		EnhancedInputComponent->BindAction(ThrottleAction, ETriggerEvent::Triggered, this, &AOctane::Throttle);
 		EnhancedInputComponent->BindAction(SteerAction, ETriggerEvent::Triggered, this, &AOctane::Steer);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AOctane::Jump);
 	}
 
 }

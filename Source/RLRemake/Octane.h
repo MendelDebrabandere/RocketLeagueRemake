@@ -41,9 +41,16 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* SteerAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* JumpAction;
+
 private:
+	//Input actions
 	void Throttle(const FInputActionValue& Value);
 	void Steer(const FInputActionValue& Value);
+	void Jump(const FInputActionValue& Value);
+
+	//Helper functions
 	bool IsGrounded();
 
 	UPROPERTY(EditAnywhere, Category = Mesh)
@@ -63,6 +70,10 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = CarSettings)
 	float TurnAngle{};
+
+	UPROPERTY(EditAnywhere, Category = CarSettings)
+	float JumpForce{};
+
 
 	float CurrentTurnAngle{};
 
