@@ -44,9 +44,7 @@ protected:
 private:
 	void Throttle(const FInputActionValue& Value);
 	void Steer(const FInputActionValue& Value);
-
-	UPROPERTY(EditAnywhere, Category = Root)
-	USceneComponent* Root;
+	bool IsGrounded();
 
 	UPROPERTY(EditAnywhere, Category = Mesh)
 	UStaticMeshComponent* OctaneMesh;

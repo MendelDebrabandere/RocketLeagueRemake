@@ -14,14 +14,10 @@ AOctane::AOctane()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Set the root as the root component of the pawn
-	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
-	RootComponent = Root;
-
 	// Create the mesh component
 	OctaneMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	OctaneMesh->SetSimulatePhysics(true);
-	OctaneMesh->SetupAttachment(Root);
+	RootComponent = OctaneMesh;
 
 	// Create the spring arm component
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
@@ -56,45 +52,76 @@ void AOctane::Steer(const FInputActionValue& Value)
 	CurrentTurnAngle = Value.Get<FVector2D>().X * TurnAngle;
 }
 
+bool AOctane::IsGrounded()
+{
+	FVector StartLocation = GetActorLocation();
+	FVector EndLocation = StartLocation - FVector(0.0f, 0.0f, 10.0f); // Adjust the Z value for your needs
+
+	FHitResult HitResult;
+	FCollisionQueryParams CollisionParams;
+	CollisionParams.AddIgnoredActor(this); // Ignore the calling pawn itself
+
+	// Perform the Line Trace
+	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, CollisionParams);
+
+	// Debug Visualization
+	if (bHit)
+	{
+		// If the Line Trace hit something, draw a green line from StartLocation to the hit point
+		DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Green, false, 0.1f, 0, 1);
+	}
+	else
+	{
+		// If the Line Trace didn't hit anything, draw a red line to the EndLocation
+		DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Red, false, 0.1f, 0, 1);
+	}
+
+	// Return the result of the Line Trace
+	return bHit;
+}
+
 // Called every frame
 void AOctane::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	//if throttling
-	if (ThrottleValue > 0.1f)
+	const bool grounded = IsGrounded();
+
+	//if (grounded)
 	{
-		//if steering, rotate first before moving
-		if (CurrentTurnAngle)
+		//if throttling
+		if (ThrottleValue > 0.1f)
 		{
-			// Get the current relative rotation of the OctaneMesh
-			FRotator CurrentRelativeRotation = OctaneMesh->GetRelativeRotation();
+			//if steering, rotate first before moving
+			if (CurrentTurnAngle)
+			{
+				// Get the current relative rotation of the OctaneMesh
+				FRotator CurrentRelativeRotation = OctaneMesh->GetRelativeRotation();
 
-			// Add the rotation value of 10 degrees around the Z-axis
-			FRotator IncrementalRotation(0.f, CurrentTurnAngle * DeltaTime , 0.f);
-			FRotator NewRelativeRotation = CurrentRelativeRotation + IncrementalRotation;
+				// Add the rotation value of 10 degrees around the Z-axis
+				FRotator IncrementalRotation(0.f, CurrentTurnAngle * DeltaTime, 0.f);
+				FRotator NewRelativeRotation = CurrentRelativeRotation + IncrementalRotation;
 
-			// Set the new relative rotation for the OctaneMesh
-			OctaneMesh->SetRelativeRotation(NewRelativeRotation);
+				// Set the new relative rotation for the OctaneMesh
+				OctaneMesh->SetRelativeRotation(NewRelativeRotation);
+			}
+
+			UE_LOG(LogTemp, Warning, TEXT("The linear velocity is: %f"), OctaneMesh->GetPhysicsLinearVelocity().Length())
+
+				// Calculate forward movement based on input
+				FVector ForwardForce = OctaneMesh->GetForwardVector() * ThrottleValue * ThrottleAcceleration;
+
+			// Apply the forward force to the car's physics body
+			OctaneMesh->AddForce(ForwardForce);
+
+			// If the car is too fast, cap the speed from throttling
+			FVector velocity = OctaneMesh->GetPhysicsLinearVelocity();
+			float speed = velocity.Length();
+			if (speed > MaxThrottleSpeed)
+			{
+				OctaneMesh->SetPhysicsLinearVelocity(velocity / speed * MaxThrottleSpeed);
+			}
 		}
-
-		UE_LOG(LogTemp, Warning, TEXT("The linear velocity is: %f"), OctaneMesh->GetPhysicsLinearVelocity().Length())
-
-		// Calculate forward movement based on input
-		FVector ForwardForce = OctaneMesh->GetForwardVector() * ThrottleValue * ThrottleAcceleration;
-
-		// Apply the forward force to the car's physics body
-		OctaneMesh->AddForce(ForwardForce);
-
-		// If the car is too fast, cap the speed from throttling
-		FVector velocity = OctaneMesh->GetPhysicsLinearVelocity();
-		float speed = velocity.Length();
-		if (speed > MaxThrottleSpeed)
-		{
-			OctaneMesh->SetPhysicsLinearVelocity(velocity / speed * MaxThrottleSpeed);
-		}
-
-
 	}
 
 
